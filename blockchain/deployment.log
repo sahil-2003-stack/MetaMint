@@ -1,0 +1,36 @@
+[dotenv@17.2.0] injecting env (3) from .env (tip: ⚙️  enable debug logging with { debug: true })
+[?25l[2K[1G[36m?[39m [1mConfirm deploy to network megatestnet (6342)?[22m [90m›[39m [90m(y/N)[39m[2K[1G[2K[1G[32m✔[39m [1mConfirm deploy to network megatestnet (6342)?[22m [90m…[39m yes
+[?25hHardhat Ignition starting for [ CombinedDeploymentModule ]...[2K[1GHardhat Ignition 🚀
+
+Deploying [ CombinedDeploymentModule ]
+
+Batch #1
+  Executing CombinedDeploymentModule#Lock...
+  Executing CombinedDeploymentModule#MembershipNFT...
+
+[4A[0JBatch #1
+  Executing CombinedDeploymentModule#Lock...
+  Executing CombinedDeploymentModule#MembershipNFT...
+
+[4A[0JBatch #1
+  Executing CombinedDeploymentModule#Lock...
+  Executing CombinedDeploymentModule#MembershipNFT...
+
+[4A[0JBatch #1
+  Executed CombinedDeploymentModule#Lock
+  Executing CombinedDeploymentModule#MembershipNFT...
+
+[4A[0JBatch #1
+  Executed CombinedDeploymentModule#Lock
+  Executed CombinedDeploymentModule#MembershipNFT
+
+[4A[0JBatch #1
+  Executed CombinedDeploymentModule#Lock
+  Executed CombinedDeploymentModule#MembershipNFT
+
+[ CombinedDeploymentModule ] successfully deployed 🚀
+
+Deployed Addresses
+
+CombinedDeploymentModule#Lock - 0xcE1B399904721Ac325Fe868bC8d2bf96C9dA60Fa
+CombinedDeploymentModule#MembershipNFT - 0x3C9252d9488F463490217d68c9E4aF0C5617AC99

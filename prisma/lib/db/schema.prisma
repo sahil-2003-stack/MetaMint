@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./lib/db"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(cuid())
+  walletAddress  String?       @unique
+  username       String?       @unique
+  loyaltyPoints  Int           @default(0)
+  createdAt      DateTime      @default(now())
+  membershipTier String?
+  email          String?       @unique
+  password       String?
+  profileBanner  String?
+  profileImage   String?
+  accounts       Account[]
+  nfts           NFT[]
+  sessions       Session[]
+  transactions   Transaction[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  user              User    @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model NFT {
+  id            String   @id @default(cuid())
+  tokenId       Int
+  contract      String
+  userId        String?
+  createdAt     DateTime @default(now())
+  tier          String // bronze | silver | gold
+  name          String?
+  description   String?
+  image         String?
+  price         String? // ETH price as string
+  isCoreDrop    Boolean  @default(false)
+  isMembership  Boolean  @default(false)
+  isPartnerDrop Boolean  @default(false)
+  partnerSource String? // e.g., "opensea", "rarible"
+  metadata      Json? // Store additional metadata
+  user          User?    @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  type        String
+  description String
+  amount      String
+  status      String
+  date        DateTime @default(now())
+  userId      String
+  metadata    Json? // Store additional transaction data
+  user        User     @relation(fields: [userId], references: [id])
+}
