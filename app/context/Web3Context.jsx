@@ -91,26 +91,34 @@ export const Web3Provider = ({ children }) => {
 
     // Function to fetch owned NFTs from both database and blockchain
     const fetchOwnedNFTs = async () => {
-        if (!wallet) {
-            console.log("No wallet connected, skipping NFT fetch");
-            return;
+    if (!wallet) {
+      console.log("No wallet connected, skipping NFT fetch");
+      return;
+    }
+  
+    setLoadingNFTs(true);
+    try {
+      // Get session token from wherever you store it (cookies, context, etc)
+      const token = localStorage.getItem('authToken'); // Implement this function
+      
+      const response = await fetch('/api/nft/owned', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-
-        setLoadingNFTs(true);
-        try {
-            const response = await fetch('/api/nft/owned');
-            if (response.ok) {
-                const data = await response.json();
-                setOwnedNFTs(data.nfts || []);
-            } else {
-                console.error('Failed to fetch owned NFTs');
-            }
-        } catch (error) {
-            console.error("Error fetching owned NFTs:", error);
-        } finally {
-            setLoadingNFTs(false);
-        }
-    };
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setOwnedNFTs(data.nfts || []);
+      } else {
+        console.error('Failed to fetch owned NFTs');
+      }
+    } catch (error) {
+      console.error("Error fetching owned NFTs:", error);
+    } finally {
+      setLoadingNFTs(false);
+    }
+  };
 
     // Function to get owned NFTs from blockchain (for future implementation)
     const getOwnedNFTsFromBlockchain = async () => {

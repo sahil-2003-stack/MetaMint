@@ -10,7 +10,7 @@ import { useAuth } from "../../hooks/useAuth"
 import { Edit, Upload, Image as ImageIcon, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 
-export default function EditProfileModal({ currentData, onProfileUpdated, isOpen, onOpenChange }) {
+export default function EditProfileModal({ currentData, onProfileUpdated }) {
   const { user, updateUser } = useAuth()
   const [formData, setFormData] = useState({
     username: currentData?.username || "",
@@ -26,7 +26,6 @@ export default function EditProfileModal({ currentData, onProfileUpdated, isOpen
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  
   // Remove open state and modalError
 
   const handleInputChange = (field, value) => {
@@ -103,8 +102,8 @@ export default function EditProfileModal({ currentData, onProfileUpdated, isOpen
           onProfileUpdated(data.user)
         }
         setTimeout(() => {
-          onOpenChange(false); // Close using prop
-          setSuccess("");
+          setDialogOpen(false)
+          setSuccess("")
         }, 1200)
       } else {
         const data = await res.json()
@@ -118,7 +117,13 @@ export default function EditProfileModal({ currentData, onProfileUpdated, isOpen
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full justify-start" onClick={() => setDialogOpen(true)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Edit Profile
+        </Button>
+      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
@@ -307,7 +312,7 @@ export default function EditProfileModal({ currentData, onProfileUpdated, isOpen
             <Button onClick={handleSubmit} disabled={isLoading} className="flex-1">
               {isLoading ? "Saving..." : "Save Changes"}
             </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
           </div>

@@ -19,10 +19,6 @@ export default function UserProfile() {
   const { wallet, connectWallet, disconnectWallet, viewOnExplorer, checkMintStatus } = useContext(Web3Context)
   const [membershipData, setMembershipData] = useState(null)
   const [loading, setLoading] = useState(true)
-  // Add this state to control modal visibility
-const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-// Update the EditProfileModal usage
 
   useEffect(() => {
     if (user) {
@@ -32,22 +28,15 @@ const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchMembershipData = async () => {
     try {
-      const response = await fetch('/api/user/membership', {
-        credentials: 'include'
-      });
-      
+      const response = await fetch('/api/user/membership')
       if (response.ok) {
-        const data = await response.json();
-        setMembershipData(data);
-      } else if (response.status === 401) {
-        // Handle unauthorized (e.g., redirect to login)
-        console.error('Unauthorized - redirecting to login');
-        window.location.href = '/auth/signin';
+        const data = await response.json()
+        setMembershipData(data)
       }
     } catch (error) {
-      console.error('Failed to fetch membership data:', error);
+      console.error('Failed to fetch membership data:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -111,12 +100,11 @@ const [isEditModalOpen, setIsEditModalOpen] = useState(false);
             <div className="h-32 bg-gradient-to-r from-purple-500 to-pink-500 relative">
               {getImageUrl(user.profileBanner) ? (
                 <Image
-                src={getImageUrl(user.profileBanner)}
-                alt="Profile Banner"
-                fill
-                className="object-cover"
-                priority // Add this
-              />
+                  src={getImageUrl(user.profileBanner)}
+                  alt="Profile Banner"
+                  fill
+                  className="object-cover"
+                />
               ) : null}
             </div>
 
@@ -165,20 +153,8 @@ const [isEditModalOpen, setIsEditModalOpen] = useState(false);
               </div>
 
               <div className="mt-6 space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setIsEditModalOpen(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-<EditProfileModal 
-          currentData={user}
-          onProfileUpdated={handleProfileUpdated}
-          isOpen={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-        />
+                <EditProfileModal currentData={user} onProfileUpdated={handleProfileUpdated} />
+
                 <Button
                   variant="outline"
                   className="w-full justify-start"
