@@ -12,6 +12,7 @@ export async function PUT(req) {
     const username = formData.get("username")
     const email = formData.get("email")
     const walletAddress = formData.get("walletAddress")
+    const currentPassword = formData.get("currentPassword")
     const password = formData.get("password")
     const profileImage = formData.get("profileImage")
     const profileBanner = formData.get("profileBanner")
@@ -27,6 +28,14 @@ export async function PUT(req) {
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // If password change is requested, verify current password
+    if (password && currentPassword) {
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, existingUser.password)
+      if (!isCurrentPasswordValid) {
+        return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 })
+      }
     }
 
     // Check for conflicts with other users

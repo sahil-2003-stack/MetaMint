@@ -130,7 +130,7 @@ export default function LoyaltyDashboard() {
   const { user, token } = useAuth()
   const { toast } = useToast()
   const [loyaltyData, setLoyaltyData] = useState({
-    points: 0,
+    points: 10000,
     tier: "bronze",
     transactions: []
   })

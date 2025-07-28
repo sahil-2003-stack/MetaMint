@@ -125,12 +125,6 @@ export default function ProfileDropdown() {
                 View Profile
               </Button>
             </Link>
-            <Link href="/profile">
-              <Button variant="ghost" className="w-full justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            </Link>
             <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out

@@ -1,30 +1,66 @@
+// app/components/profile/UserProfile.jsx
 "use client"
 
 import { useState, useContext, useEffect } from "react"
 import { useAuth } from "../../hooks/useAuth"
 import { Web3Context } from "../../context/Web3Context"
 import Image from "next/image"
-import EditProfileModal from "../../components/profile/EditProfileModal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-import { Copy, ExternalLink, Edit, LogOut, User, Wallet, Calendar, Award } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Copy, ExternalLink, Edit, LogOut, Wallet, Award, Save, X, Eye, EyeOff, Upload, Image as ImageIcon } from "lucide-react"
 
 export default function UserProfile() {
-  const { user, logout } = useAuth()
+  const { user, logout, updateUser } = useAuth()
   const { wallet, connectWallet, disconnectWallet, viewOnExplorer, checkMintStatus } = useContext(Web3Context)
   const [membershipData, setMembershipData] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false)
+  const [editData, setEditData] = useState({
+    username: "",
+    email: "",
+    walletAddress: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+  const [editError, setEditError] = useState("")
+  const [editSuccess, setEditSuccess] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  
+  // File upload states
+  const [profileImage, setProfileImage] = useState(null)
+  const [profileBanner, setProfileBanner] = useState(null)
+  const [profileImagePreview, setProfileImagePreview] = useState(null)
+  const [profileBannerPreview, setProfileBannerPreview] = useState(null)
 
   useEffect(() => {
-    if (user) {
-      fetchMembershipData()
-    }
+    if (user) fetchMembershipData()
   }, [user])
+
+  useEffect(() => {
+    if (user && isEditing) {
+      setEditData({
+        username: user.username || "",
+        email: user.email || "",
+        walletAddress: user.walletAddress || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      })
+    }
+  }, [user, isEditing])
 
   const fetchMembershipData = async () => {
     try {
@@ -53,9 +89,118 @@ export default function UserProfile() {
     window.location.href = "/"
   }
 
-  // Refetch membership data after profile update
-  const handleProfileUpdated = () => {
-    fetchMembershipData()
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Cancel editing
+      setIsEditing(false)
+      setEditError("")
+      setEditSuccess("")
+      setProfileImage(null)
+      setProfileBanner(null)
+      setProfileImagePreview(null)
+      setProfileBannerPreview(null)
+    } else {
+      // Start editing
+      setIsEditing(true)
+      setEditData({
+        username: user?.username || "",
+        email: user?.email || "",
+        walletAddress: user?.walletAddress || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      })
+    }
+  }
+
+  const handleInputChange = (field, value) => {
+    setEditData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleFileChange = (field, file) => {
+    if (file) {
+      const preview = URL.createObjectURL(file)
+      if (field === 'profileImage') {
+        setProfileImage(file)
+        setProfileImagePreview(preview)
+      } else if (field === 'profileBanner') {
+        setProfileBanner(file)
+        setProfileBannerPreview(preview)
+      }
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true)
+    setEditError("")
+    setEditSuccess("")
+
+    // Password validation
+    if (editData.newPassword && !editData.currentPassword) {
+      setEditError("Current password is required to change password")
+      setIsSaving(false)
+      return
+    }
+
+    if (editData.newPassword && editData.newPassword !== editData.confirmPassword) {
+      setEditError("New passwords do not match")
+      setIsSaving(false)
+      return
+    }
+
+    if (editData.newPassword && editData.newPassword.length < 6) {
+      setEditError("New password must be at least 6 characters long")
+      setIsSaving(false)
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append("userId", user?.id)
+      formData.append("username", editData.username)
+      formData.append("email", editData.email)
+      formData.append("walletAddress", editData.walletAddress)
+      
+      if (editData.currentPassword) {
+        formData.append("currentPassword", editData.currentPassword)
+      }
+      if (editData.newPassword) {
+        formData.append("password", editData.newPassword)
+      }
+      
+      if (profileImage) {
+        formData.append("profileImage", profileImage)
+      }
+      if (profileBanner) {
+        formData.append("profileBanner", profileBanner)
+      }
+
+      const res = await fetch("/api/user/update", {
+        method: "PUT",
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setEditSuccess("Profile updated successfully")
+        updateUser(data.user)
+        setIsEditing(false)
+        setProfileImage(null)
+        setProfileBanner(null)
+        setProfileImagePreview(null)
+        setProfileBannerPreview(null)
+        setTimeout(() => {
+          setEditSuccess("")
+        }, 2000)
+      } else {
+        const data = await res.json()
+        setEditError(data.error || "Update failed")
+      }
+    } catch (error) {
+      setEditError("An error occurred during update")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   if (!user) {
@@ -72,7 +217,6 @@ export default function UserProfile() {
     )
   }
 
-  // Helper function to get proper image URL
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null
     if (imagePath.startsWith('http')) return imagePath
@@ -80,16 +224,11 @@ export default function UserProfile() {
     return `/${imagePath}`
   }
 
-  // Prefer membershipData.createdAt, fallback to user.createdAt
   const memberSince = membershipData?.memberSince
     ? new Date(membershipData.memberSince).toLocaleDateString()
     : (user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A")
   const membershipTier = membershipData?.membershipTier || user.membershipTier || "none"
   const loyaltyPoints = membershipData?.loyaltyPoints || user.loyaltyPoints || 0
-
-  // For debug UI
-  const profileImageUrl = getImageUrl(user.profileImage)
-  const profileBannerUrl = getImageUrl(user.profileBanner)
 
   return (
     <div className="container mx-auto py-8 px-4 sm:py-12">
@@ -98,7 +237,14 @@ export default function UserProfile() {
         <div className="lg:col-span-1">
           <Card>
             <div className="h-32 bg-gradient-to-r from-purple-500 to-pink-500 relative">
-              {getImageUrl(user.profileBanner) ? (
+              {profileBannerPreview ? (
+                <Image
+                  src={profileBannerPreview}
+                  alt="Profile Banner"
+                  fill
+                  className="object-cover"
+                />
+              ) : getImageUrl(user.profileBanner) ? (
                 <Image
                   src={getImageUrl(user.profileBanner)}
                   alt="Profile Banner"
@@ -111,7 +257,12 @@ export default function UserProfile() {
             <div className="px-6 pb-6">
               <div className="flex justify-center -mt-12">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background">
-                  {getImageUrl(user.profileImage) ? (
+                  {profileImagePreview ? (
+                    <AvatarImage 
+                      src={profileImagePreview} 
+                      alt={user.username || ""} 
+                    />
+                  ) : getImageUrl(user.profileImage) ? (
                     <AvatarImage 
                       src={getImageUrl(user.profileImage)} 
                       alt={user.username || ""} 
@@ -146,14 +297,31 @@ export default function UserProfile() {
                 </div>
                 <div className="bg-muted rounded-lg p-4 text-center">
                   <p className="text-sm text-muted-foreground">Member Since</p>
-                  <p className="text-base sm:text-lg font-medium">
-                    {memberSince}
-                  </p>
+                  <p className="text-base sm:text-lg font-medium">{memberSince}</p>
                 </div>
               </div>
 
               <div className="mt-6 space-y-2">
-                <EditProfileModal currentData={user} onProfileUpdated={handleProfileUpdated} />
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleEditToggle}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    "Saving..."
+                  ) : isEditing ? (
+                    <>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel Edit
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </>
+                  )}
+                </Button>
 
                 <Button
                   variant="outline"
@@ -204,7 +372,7 @@ export default function UserProfile() {
           </Card>
         </div>
 
-        {/* Tabs (NFTs, Transactions) */}
+        {/* Tabs Section */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -212,72 +380,271 @@ export default function UserProfile() {
               <CardDescription>Your account information and activity</CardDescription>
             </CardHeader>
             <CardContent>
+              {editError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{editError}</AlertDescription>
+                </Alert>
+              )}
+              {editSuccess && (
+                <Alert className="mb-4">
+                  <AlertDescription>{editSuccess}</AlertDescription>
+                </Alert>
+              )}
+              
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="nfts">NFTs</TabsTrigger>
                   <TabsTrigger value="transactions">Transactions</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="overview" className="mt-6">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Account Information</h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Username:</span>
-                            <span>{user.username || "Not set"}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Email:</span>
-                            <span>{user.email}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Wallet:</span>
-                            <span className="font-mono text-xs">
-                              {user.walletAddress || "Not connected"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Membership:</span>
-                            <span>{membershipTier}</span>
-                          </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Account Information</h3>
+                      
+                      <div className="space-y-3">
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-sm text-muted-foreground">Username:</label>
+                          {isEditing ? (
+                            <Input
+                              value={editData.username}
+                              onChange={(e) => handleInputChange("username", e.target.value)}
+                              placeholder="Enter username"
+                            />
+                          ) : (
+                            <span className="text-sm">{user.username || "Not set"}</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-sm text-muted-foreground">Email:</label>
+                          {isEditing ? (
+                            <Input
+                              type="email"
+                              value={editData.email}
+                              onChange={(e) => handleInputChange("email", e.target.value)}
+                              placeholder="Enter email"
+                            />
+                          ) : (
+                            <span className="text-sm">{user.email}</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-sm text-muted-foreground">Wallet:</label>
+                          {isEditing ? (
+                            <Input
+                              value={editData.walletAddress}
+                              onChange={(e) => handleInputChange("walletAddress", e.target.value)}
+                              placeholder="0x..."
+                            />
+                          ) : (
+                            <span className="text-sm font-mono">{user.walletAddress || "Not connected"}</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-sm text-muted-foreground">Password:</label>
+                          {isEditing ? (
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <Input
+                                  type={showCurrentPassword ? "text" : "password"}
+                                  value={editData.currentPassword}
+                                  onChange={(e) => handleInputChange("currentPassword", e.target.value)}
+                                  placeholder="Current password (required to change)"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-1 top-1 h-8 w-8"
+                                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                >
+                                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                              <div className="relative">
+                                <Input
+                                  type={showNewPassword ? "text" : "password"}
+                                  value={editData.newPassword}
+                                  onChange={(e) => handleInputChange("newPassword", e.target.value)}
+                                  placeholder="New password (optional)"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-1 top-1 h-8 w-8"
+                                  onClick={() => setShowNewPassword(!showNewPassword)}
+                                >
+                                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                              <div className="relative">
+                                <Input
+                                  type={showConfirmPassword ? "text" : "password"}
+                                  value={editData.confirmPassword}
+                                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                                  placeholder="Confirm new password"
+                                  className="pr-10"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-1 top-1 h-8 w-8"
+                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-sm">••••••••</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-sm text-muted-foreground">Membership:</label>
+                          <span className="text-sm">{membershipTier}</span>
                         </div>
                       </div>
                       
-                      <div className="space-y-2">
+                      {isEditing && (
+                        <Button 
+                          onClick={handleSaveChanges} 
+                          disabled={isSaving}
+                          className="w-full"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Profile Images</h3>
+                      
+                      {isEditing && (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <label className="text-sm text-muted-foreground">Profile Image:</label>
+                            <div className="flex items-center space-x-2">
+                              <div className="relative w-16 h-16 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                                {profileImagePreview ? (
+                                  <Image
+                                    src={profileImagePreview}
+                                    alt="Profile"
+                                    fill
+                                    className="object-cover rounded-lg"
+                                  />
+                                ) : getImageUrl(user.profileImage) ? (
+                                  <Image
+                                    src={getImageUrl(user.profileImage)}
+                                    alt="Profile"
+                                    fill
+                                    className="object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileChange("profileImage", e.target.files?.[0] || null)}
+                                  className="hidden"
+                                  id="profileImage"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => document.getElementById("profileImage")?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Upload
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm text-muted-foreground">Profile Banner:</label>
+                            <div className="flex items-center space-x-2">
+                              <div className="relative w-16 h-16 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
+                                {profileBannerPreview ? (
+                                  <Image
+                                    src={profileBannerPreview}
+                                    alt="Banner"
+                                    fill
+                                    className="object-cover rounded-lg"
+                                  />
+                                ) : getImageUrl(user.profileBanner) ? (
+                                  <Image
+                                    src={getImageUrl(user.profileBanner)}
+                                    alt="Banner"
+                                    fill
+                                    className="object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileChange("profileBanner", e.target.files?.[0] || null)}
+                                  className="hidden"
+                                  id="profileBanner"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => document.getElementById("profileBanner")?.click()}
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Upload
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2 text-sm">
                         <h3 className="font-medium">Activity Summary</h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Loyalty Points:</span>
-                            <span>{loyaltyPoints}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">NFTs Owned:</span>
-                            <span>0</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Total Transactions:</span>
-                            <span>0</span>
-                          </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Loyalty Points:</span>
+                          <span>{loyaltyPoints}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">NFTs Owned:</span>
+                          <span>0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Transactions:</span>
+                          <span>0</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </TabsContent>
-                
-                <TabsContent value="nfts" className="mt-6">
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No NFTs found</p>
-                    <Button className="mt-4">Browse NFTs</Button>
-                  </div>
+
+                <TabsContent value="nfts" className="mt-6 text-center py-8">
+                  <p className="text-muted-foreground">No NFTs found</p>
+                  <Button className="mt-4">Browse NFTs</Button>
                 </TabsContent>
-                
-                <TabsContent value="transactions" className="mt-6">
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No transactions found</p>
-                  </div>
+
+                <TabsContent value="transactions" className="mt-6 text-center py-8">
+                  <p className="text-muted-foreground">No transactions found</p>
                 </TabsContent>
               </Tabs>
             </CardContent>
