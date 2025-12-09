@@ -198,7 +198,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/sonis/Documents/pc-s/nft-v0/prisma/lib/db",
+      "value": "/Users/sonis/Documents/pc-s/work/web projects/nft-v0/prisma/lib/db",
       "fromEnvVar": null
     },
     "config": {
@@ -209,10 +209,18 @@ const config = {
         "fromEnvVar": null,
         "value": "darwin-arm64",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-1.1.x"
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/sonis/Documents/pc-s/nft-v0/prisma/schema.prisma",
+    "sourceFilePath": "/Users/sonis/Documents/pc-s/work/web projects/nft-v0/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -235,8 +243,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"./lib/db\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id             String        @id @default(cuid())\n  walletAddress  String?       @unique\n  username       String?       @unique\n  loyaltyPoints  Int           @default(0)\n  createdAt      DateTime      @default(now())\n  membershipTier String?\n  email          String?       @unique\n  password       String?\n  profileBanner  String?\n  profileImage   String?\n  accounts       Account[]\n  nfts           NFT[]\n  sessions       Session[]\n  transactions   Transaction[]\n}\n\nmodel Account {\n  id                String  @id @default(cuid())\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  user              User    @relation(fields: [userId], references: [id])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id])\n}\n\nmodel NFT {\n  id            String   @id @default(cuid())\n  tokenId       Int\n  contract      String\n  userId        String?\n  createdAt     DateTime @default(now())\n  tier          String // bronze | silver | gold\n  name          String?\n  description   String?\n  image         String?\n  price         String? // ETH price as string\n  isCoreDrop    Boolean  @default(false)\n  isMembership  Boolean  @default(false)\n  isPartnerDrop Boolean  @default(false)\n  partnerSource String? // e.g., \"opensea\", \"rarible\"\n  metadata      Json? // Store additional metadata\n  user          User?    @relation(fields: [userId], references: [id])\n}\n\nmodel Transaction {\n  id          String   @id @default(cuid())\n  type        String\n  description String\n  amount      String\n  status      String\n  date        DateTime @default(now())\n  userId      String\n  metadata    Json? // Store additional transaction data\n  user        User     @relation(fields: [userId], references: [id])\n}\n",
-  "inlineSchemaHash": "8311b0b55f1aea488ddd556286080df49fd87c235a518ced9e093189159041d5",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\", \"debian-openssl-1.1.x\"]\n  output        = \"./lib/db\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id             String        @id @default(cuid())\n  walletAddress  String?       @unique\n  username       String?       @unique\n  loyaltyPoints  Int           @default(0)\n  createdAt      DateTime      @default(now())\n  membershipTier String?\n  email          String?       @unique\n  password       String?\n  profileBanner  String?\n  profileImage   String?\n  accounts       Account[]\n  nfts           NFT[]\n  sessions       Session[]\n  transactions   Transaction[]\n}\n\nmodel Account {\n  id                String  @id @default(cuid())\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  user              User    @relation(fields: [userId], references: [id])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id])\n}\n\nmodel NFT {\n  id            String   @id @default(cuid())\n  tokenId       Int\n  contract      String\n  userId        String?\n  createdAt     DateTime @default(now())\n  tier          String // bronze | silver | gold\n  name          String?\n  description   String?\n  image         String?\n  price         String? // ETH price as string\n  isCoreDrop    Boolean  @default(false)\n  isMembership  Boolean  @default(false)\n  isPartnerDrop Boolean  @default(false)\n  partnerSource String? // e.g., \"opensea\", \"rarible\"\n  metadata      Json? // Store additional metadata\n  user          User?    @relation(fields: [userId], references: [id])\n}\n\nmodel Transaction {\n  id          String   @id @default(cuid())\n  type        String\n  description String\n  amount      String\n  status      String\n  date        DateTime @default(now())\n  userId      String\n  metadata    Json? // Store additional transaction data\n  user        User     @relation(fields: [userId], references: [id])\n}\n",
+  "inlineSchemaHash": "8bf0d124b26161886717ad674358b263b71dea85511235edb60fcd765f589d92",
   "copyEngine": true
 }
 
@@ -277,6 +285,14 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");
 path.join(process.cwd(), "prisma/lib/db/libquery_engine-darwin-arm64.dylib.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-rhel-openssl-3.0.x.so.node");
+path.join(process.cwd(), "prisma/lib/db/libquery_engine-rhel-openssl-3.0.x.so.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-debian-openssl-1.1.x.so.node");
+path.join(process.cwd(), "prisma/lib/db/libquery_engine-debian-openssl-1.1.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "prisma/lib/db/schema.prisma")
